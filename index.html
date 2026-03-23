@@ -1,7 +1,577 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iyi ki doğdun koca gö*lüm 👀</title>
+    <meta name="description" content="Sana özel bir doğum günü hediyesi — çiçekler açsın senin için.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #050508;
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            color: #f0e6ff;
+            position: relative;
+        }
+
+        #sparkle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .ambient-glow {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 40% at 50% 95%, rgba(120, 60, 180, 0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 30% at 30% 80%, rgba(180, 80, 200, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 70% 85%, rgba(100, 50, 160, 0.06) 0%, transparent 60%);
+        }
+
+        #flower-garden {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #stems-svg {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ── Flower head ── */
+        .flower-head {
+            position: absolute;
+            /* başlangıç: gizli, scale(0) */
+            transform: scale(0) rotate(-15deg);
+            opacity: 0;
+            /* bloom animasyonu forward ile son karede (scale 1, opacity 1) kalır */
+            animation-fill-mode: forwards;
+        }
+
+        .flower-head.bloomed {
+            animation: bloomIn 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Sway: scale(1) rotate(Xdeg) — scale korunur */
+        .flower-head.swaying {
+            /* animation shorthand ile transform-origin korunuyor, scale 1'de sabit */
+        }
+
+        .petal {
+            position: absolute;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            filter: blur(1.5px);
+            opacity: 0.85;
+            transform-origin: center bottom;
+        }
+
+        .flower-center {
+            position: absolute;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #message-area {
+            position: fixed;
+            top: 12%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 2.5s ease, transform 2.5s ease;
+            pointer-events: none;
+        }
+
+        #message-area.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #message-area .main-quote {
+            font-size: clamp(1.2rem, 3vw, 2.2rem);
+            font-weight: 300;
+            font-style: italic;
+            letter-spacing: 0.05em;
+            color: #e8d5f5;
+            text-shadow:
+                0 0 20px rgba(180, 120, 255, 0.4),
+                0 0 40px rgba(180, 120, 255, 0.15);
+            margin-bottom: 12px;
+        }
+
+        #message-area .sub-text {
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(0.65rem, 1.2vw, 0.85rem);
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: rgba(200, 180, 220, 0.5);
+        }
+
+        /* ── Animations ── */
+        @keyframes bloomIn {
+            0% {
+                transform: scale(0) rotate(-15deg);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.15) rotate(5deg);
+                opacity: 0.9;
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes petalPulse {
+
+            0%,
+            100% {
+                filter: blur(1.5px) brightness(1);
+            }
+
+            50% {
+                filter: blur(2px) brightness(1.2);
+            }
+        }
+
+        /* Sway: scale(1) korunur, sadece rotate sallanır */
+        @keyframes gentleSway {
+
+            0%,
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+
+            25% {
+                transform: scale(1) rotate(1.2deg);
+            }
+
+            75% {
+                transform: scale(1) rotate(-1.2deg);
+            }
+        }
+    </style>
+</head>
+
 <body>
-    <h1>Merhaba Dünya!</h1>
-    <p>GitHub Pages siteme hoş geldiniz.</p>
+
+    <div class="ambient-glow"></div>
+    <canvas id="sparkle-canvas"></canvas>
+    <div id="flower-garden">
+        <svg id="stems-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div id="message-area">
+        <div class="main-quote">"Vera amicitia sempiterna est"</div>
+        <div class="sub-text">Gerçek dostluk sonsuzdur — İyi ki doğdun 🤍</div>
+    </div>
+
+    <script>
+        // ── Sparkle particles ──
+        const canvas = document.getElementById('sparkle-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Sparkle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.8 + 0.3;
+                this.opacity = 0;
+                this.maxOpacity = Math.random() * 0.6 + 0.15;
+                this.speed = Math.random() * 0.3 + 0.05;
+                this.phase = Math.random() * Math.PI * 2;
+                this.phaseSpeed = Math.random() * 0.02 + 0.005;
+                this.hue = Math.random() > 0.5 ? 270 + Math.random() * 40 : 200 + Math.random() * 30;
+            }
+            update() {
+                this.phase += this.phaseSpeed;
+                this.opacity = this.maxOpacity * (0.5 + 0.5 * Math.sin(this.phase));
+                this.y -= this.speed * 0.15;
+                if (this.y < -10) this.reset();
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = `hsla(${this.hue}, 80%, 80%, 1)`;
+                ctx.shadowColor = `hsla(${this.hue}, 90%, 70%, 0.8)`;
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const sparkles = [];
+        for (let i = 0; i < 120; i++) sparkles.push(new Sparkle());
+
+        function animateSparkles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            sparkles.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animateSparkles);
+        }
+        animateSparkles();
+
+        // ── Flower system ──
+        const garden = document.getElementById('flower-garden');
+        const stemsSvg = document.getElementById('stems-svg');
+
+        const PALETTES = [
+            { petals: ['#b44dff', '#9933cc', '#cc66ff', '#a855f7'], center: '#e0ff66', glow: 'rgba(180, 77, 255, 0.6)' },
+            { petals: ['#ff66b2', '#e84393', '#ff85c8', '#fd79a8'], center: '#ffee58', glow: 'rgba(255, 102, 178, 0.6)' },
+            { petals: ['#d63384', '#c026d3', '#e879a8', '#a855f7'], center: '#a7f3a0', glow: 'rgba(214, 51, 132, 0.5)' },
+            { petals: ['#7c3aed', '#6366f1', '#8b5cf6', '#a78bfa'], center: '#86efac', glow: 'rgba(124, 58, 237, 0.5)' },
+            { petals: ['#d946ef', '#c026d3', '#e879f0', '#f0abfc'], center: '#fde68a', glow: 'rgba(217, 70, 239, 0.5)' },
+        ];
+
+        function rand(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function bezierPoint(t, p0, p1, p2) {
+            const mt = 1 - t;
+            return {
+                x: mt * mt * p0.x + 2 * mt * t * p1.x + t * t * p2.x,
+                y: mt * mt * p0.y + 2 * mt * t * p1.y + t * t * p2.y,
+            };
+        }
+
+        function createStemPath(baseX, baseY, topX, topY, curveStrength, delay) {
+            const cpX = (baseX + topX) / 2 + curveStrength;
+            const cpY = (baseY + topY) / 2 + rand(-20, 20);
+
+            const steps = 24;
+            const leftPoints = [];
+            const rightPoints = [];
+            const bottomWidth = 2.5;
+            const topWidth = 0.5;
+
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const pt = bezierPoint(t, { x: baseX, y: baseY }, { x: cpX, y: cpY }, { x: topX, y: topY });
+                const taper = 1 - Math.pow(t, 0.7);
+                const halfW = (bottomWidth * taper + topWidth * (1 - taper));
+
+                const tNext = Math.min(1, t + 0.01);
+                const tPrev = Math.max(0, t - 0.01);
+                const ptNext = bezierPoint(tNext, { x: baseX, y: baseY }, { x: cpX, y: cpY }, { x: topX, y: topY });
+                const ptPrev = bezierPoint(tPrev, { x: baseX, y: baseY }, { x: cpX, y: cpY }, { x: topX, y: topY });
+                const dx = ptNext.x - ptPrev.x;
+                const dy = ptNext.y - ptPrev.y;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const nx = -dy / len;
+                const ny = dx / len;
+
+                leftPoints.push({ x: pt.x + nx * halfW, y: pt.y + ny * halfW });
+                rightPoints.push({ x: pt.x - nx * halfW, y: pt.y - ny * halfW });
+            }
+
+            let d = `M ${leftPoints[0].x} ${leftPoints[0].y}`;
+            for (let i = 1; i < leftPoints.length; i++) {
+                d += ` L ${leftPoints[i].x} ${leftPoints[i].y}`;
+            }
+            for (let i = rightPoints.length - 1; i >= 0; i--) {
+                d += ` L ${rightPoints[i].x} ${rightPoints[i].y}`;
+            }
+            d += ' Z';
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'url(#stemGradient)');
+            path.setAttribute('opacity', '0');
+            path.style.clipPath = 'inset(100% 0 0 0)';
+            path.style.transition = `clip-path 1.5s ease-out, opacity 0.3s ease`;
+            path.style.transitionDelay = `${delay}s`;
+            stemsSvg.appendChild(path);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    path.style.opacity = '0.9';
+                    path.style.clipPath = 'inset(0 0 0 0)';
+                });
+            });
+
+            const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const centerD = `M ${baseX} ${baseY} Q ${cpX} ${cpY} ${topX} ${topY}`;
+            glowPath.setAttribute('d', centerD);
+            glowPath.setAttribute('fill', 'none');
+            glowPath.setAttribute('stroke', 'rgba(90, 155, 74, 0.25)');
+            glowPath.setAttribute('stroke-width', '4');
+            glowPath.setAttribute('filter', 'url(#stemBlur)');
+            glowPath.style.clipPath = 'inset(100% 0 0 0)';
+            glowPath.style.transition = `clip-path 1.5s ease-out, opacity 0.3s ease`;
+            glowPath.style.transitionDelay = `${delay}s`;
+            glowPath.style.opacity = '0';
+            stemsSvg.appendChild(glowPath);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    glowPath.style.opacity = '1';
+                    glowPath.style.clipPath = 'inset(0 0 0 0)';
+                });
+            });
+
+            const leafCount = Math.floor(rand(1, 3));
+            for (let li = 0; li < leafCount; li++) {
+                const lt = rand(0.25, 0.65);
+                const lp = bezierPoint(lt, { x: baseX, y: baseY }, { x: cpX, y: cpY }, { x: topX, y: topY });
+                const side = Math.random() > 0.5 ? 1 : -1;
+                const leafEl = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                leafEl.setAttribute('cx', lp.x + side * 7);
+                leafEl.setAttribute('cy', lp.y);
+                leafEl.setAttribute('rx', '6');
+                leafEl.setAttribute('ry', '3');
+                leafEl.setAttribute('fill', 'rgba(90, 155, 74, 0.5)');
+                leafEl.setAttribute('transform', `rotate(${side * 30} ${lp.x + side * 7} ${lp.y})`);
+                leafEl.style.opacity = '0';
+                leafEl.style.transition = `opacity 0.5s ease`;
+                leafEl.style.transitionDelay = `${delay + 0.8}s`;
+                stemsSvg.appendChild(leafEl);
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        leafEl.style.opacity = '1';
+                    });
+                });
+            }
+
+            return { x: topX, y: topY };
+        }
+
+        function createFlowerHead(cx, cy, size, delay, palette) {
+            const head = document.createElement('div');
+            head.className = 'flower-head';
+            head.style.width = `${size}px`;
+            head.style.height = `${size}px`;
+            head.style.left = `${cx - size / 2}px`;
+            head.style.top = `${cy - size + 4}px`;
+            head.style.transformOrigin = 'center bottom';
+
+            const petalCount = Math.floor(rand(5, 8));
+            for (let i = 0; i < petalCount; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                const angle = (360 / petalCount) * i + rand(-12, 12);
+                const pw = size * rand(0.45, 0.65);
+                const ph = size * rand(0.55, 0.75);
+                const color = palette.petals[Math.floor(Math.random() * palette.petals.length)];
+
+                petal.style.width = `${pw}px`;
+                petal.style.height = `${ph}px`;
+                petal.style.background = `radial-gradient(ellipse at 50% 30%, ${color}, ${color}88 60%, transparent)`;
+                petal.style.left = `${size / 2 - pw / 2}px`;
+                petal.style.top = `${size / 2 - ph / 2}px`;
+                petal.style.transform = `rotate(${angle}deg) translateY(-${ph * 0.25}px)`;
+                petal.style.animation = `petalPulse ${rand(3, 5)}s ease-in-out infinite`;
+                petal.style.animationDelay = `${delay + 2 + Math.random() * 0.5}s`;
+
+                head.appendChild(petal);
+            }
+
+            const center = document.createElement('div');
+            center.className = 'flower-center';
+            const cs = size * 0.22;
+            center.style.width = `${cs}px`;
+            center.style.height = `${cs}px`;
+            center.style.background = `radial-gradient(circle, ${palette.center}, ${palette.center}66, transparent)`;
+            center.style.boxShadow = `0 0 ${cs}px ${palette.glow}, 0 0 ${cs * 2}px ${palette.glow}44`;
+            head.appendChild(center);
+
+            head.style.filter = `drop-shadow(0 0 8px ${palette.glow})`;
+
+            garden.appendChild(head);
+
+            // 1) Bloom animasyonu başlat
+            setTimeout(() => {
+                head.classList.add('bloomed');
+            }, (delay + 1.4) * 1000);
+
+            // 2) Bloom bittikten sonra: animasyonu kaldır, transform'u sabitle, sonra sway başlat
+            //    bloomIn süresi 1.4s, bloom başlangıcı (delay+1.4)s → bitişi (delay+1.4+1.4)s
+            const bloomEndMs = (delay + 1.4 + 1.4) * 1000;
+
+            setTimeout(() => {
+                // Bloom animasyonu bitti — kalıcı olarak görünür yap
+                head.style.transform = 'scale(1) rotate(0deg)';
+                head.style.opacity = '1';
+                // Animasyonu sıfırla; ardından sway'i uygula
+                head.classList.remove('bloomed');
+                // Bir frame bekle, sonra sway animasyonunu ekle
+                requestAnimationFrame(() => {
+                    const swayDuration = rand(4, 7).toFixed(2);
+                    const swayDelay = (Math.random() * 1).toFixed(2);
+                    head.style.animation = `gentleSway ${swayDuration}s ${swayDelay}s ease-in-out infinite`;
+                });
+            }, bloomEndMs);
+
+            return head;
+        }
+
+        function createFlower(xPercent, stemHeight, flowerSize, delay, palette) {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+
+            const baseX = vw * xPercent / 100;
+            const baseY = vh;
+
+            const curveOffset = rand(-30, 30);
+            const topX = baseX + curveOffset;
+            const topY = vh - stemHeight;
+            const curveStrength = rand(-40, 40);
+
+            const topPt = createStemPath(baseX, baseY, topX, topY, curveStrength, delay);
+            createFlowerHead(topPt.x, topPt.y, flowerSize, delay, palette);
+        }
+
+        // ── SVG defs ──
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+        const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        grad.setAttribute('id', 'stemGradient');
+        grad.setAttribute('x1', '0'); grad.setAttribute('y1', '1');
+        grad.setAttribute('x2', '0'); grad.setAttribute('y2', '0');
+        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', '#3a6b35');
+        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop2.setAttribute('offset', '100%'); stop2.setAttribute('stop-color', '#5a9b4a');
+        grad.appendChild(stop1); grad.appendChild(stop2);
+        defs.appendChild(grad);
+
+        const blurFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+        blurFilter.setAttribute('id', 'stemBlur');
+        const feBlur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+        feBlur.setAttribute('stdDeviation', '2');
+        blurFilter.appendChild(feBlur);
+        defs.appendChild(blurFilter);
+
+        stemsSvg.appendChild(defs);
+
+        // ── Bahçeyi ek ──
+        const isMobile = window.innerWidth < 600;
+        const isTablet = window.innerWidth < 900;
+
+        // Masaüstü: 22 çiçek
+        const flowerConfigsDesktop = [
+            [5, 220, 38, 0.3],
+            [10, 320, 50, 0.8],
+            [15, 180, 32, 1.5],
+            [20, 380, 55, 0.5],
+            [25, 260, 42, 1.2],
+            [30, 300, 48, 0.2],
+            [35, 420, 58, 1.0],
+            [38, 200, 30, 2.0],
+            [42, 350, 52, 0.7],
+            [47, 150, 28, 1.8],
+            [50, 400, 60, 0.4],
+            [55, 280, 44, 1.4],
+            [58, 340, 50, 0.9],
+            [62, 240, 36, 1.6],
+            [67, 380, 56, 0.6],
+            [72, 300, 46, 1.1],
+            [75, 200, 34, 2.2],
+            [78, 360, 54, 0.3],
+            [82, 250, 40, 1.7],
+            [87, 320, 48, 0.8],
+            [92, 280, 42, 1.3],
+            [95, 180, 30, 2.0],
+        ];
+
+        // Tablet: 12 çiçek, seyrek
+        const flowerConfigsTablet = [
+            [4, 180, 32, 0.3],
+            [12, 280, 42, 0.8],
+            [22, 340, 48, 0.5],
+            [32, 220, 36, 1.2],
+            [42, 370, 50, 0.2],
+            [52, 160, 28, 1.8],
+            [62, 310, 46, 0.6],
+            [72, 260, 40, 1.4],
+            [82, 300, 44, 0.9],
+            [92, 200, 34, 1.1],
+        ];
+
+        // Mobil: 12 çiçek, daha uzun saplar
+        const flowerConfigsMobile = [
+            [3, 200, 26, 0.3],
+            [11, 320, 32, 0.7],
+            [20, 240, 28, 1.3],
+            [29, 380, 34, 0.5],
+            [38, 170, 24, 1.8],
+            [47, 350, 36, 0.9],
+            [56, 260, 30, 1.5],
+            [65, 400, 34, 0.4],
+            [74, 200, 26, 1.6],
+            [82, 310, 32, 1.0],
+            [90, 270, 28, 1.2],
+            [97, 340, 30, 0.6],
+        ];
+
+        const flowerConfigs = isMobile ? flowerConfigsMobile
+            : isTablet ? flowerConfigsTablet
+                : flowerConfigsDesktop;
+
+        flowerConfigs.forEach(([x, h, s, d], i) => {
+            const palette = PALETTES[i % PALETTES.length];
+            createFlower(x, h, s, d, palette);
+        });
+
+        // ── Mesajı göster ──
+        setTimeout(() => {
+            document.getElementById('message-area').classList.add('visible');
+        }, 4000);
+    </script>
 </body>
+
 </html>
